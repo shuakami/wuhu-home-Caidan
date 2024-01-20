@@ -1,0 +1,241 @@
+//2024-1-8 Backup-Exit 备份文件
+<template>
+  <div>
+    <!-- 音频元素 -->
+    <audio
+      ref="audioPlayer"
+      :volume="initialVolume"
+      @timeupdate="onTimeUpdate"
+      @ended="onMusicEnd"
+      @canplay="onCanPlay"
+      :src="currentTrackUrl"
+      :autoplay="shouldAutoPlayOnLoad"
+      :muted="isMuted"
+      @play="onPlay"
+      @pause="onPause"
+      :controls="!isMobile"
+    ></audio>
+
+  </div>
+</template>
+
+<script>
+import { ref, onMounted,  } from 'vue';
+import { getMusicUrl } from '@/api/Music.js';
+import {  onUnmounted } from 'vue';
+export default {
+  props: {
+    initialTrackId: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    shouldAutoPlayOnLoad: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    isMuted: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    initialVolume: {
+      type: Number,
+      default: 0.4,
+    },
+  },
+  setup(props) {
+    // 初始音量-0.5
+    const initialVolume = ref(props.initialVolume);
+    const audioPlayer = ref(null);
+    const isReady = ref(false);
+    const isAudioReady = ref(false);
+    const currentTrackId = ref(props.initialTrackId);
+    const lastPlayedTime = ref(0);
+    const currentTrackUrl = ref('');
+
+    const currentVolume = ref(0); // 当前音量，拿来做淡入淡出
+
+    let timer;
+
+    const setPlaybackTime = (time) => {
+      if (audioPlayer.value) {
+        audioPlayer.value.currentTime = time;
+      }
+    };
+
+    // 当组件挂载完成后
+    onMounted(async () => {
+      isReady.value = true;
+      console.log("Music 组件准备就绪");
+
+      if (props.initialTrackId && audioPlayer.value) {
+        await loadTrack(props.initialTrackId);
+
+        // 确保初始音量是一个合法数字且在0-1之间
+        if (isFinite(props.initialVolume) && props.initialVolume >= 0 && props.initialVolume <= 1) {
+          audioPlayer.value.volume = props.initialVolume;
+        } else {
+          console.error('Invalid initial volume:', props.initialVolume);
+        }
+
+        if (props.shouldAutoPlayOnLoad) {
+          playMusicWithFadeIn();
+        }
+      }
+    });
+
+
+    const loadTrack = async (trackId) => {
+      const musicData = await getMusicUrl(trackId);
+      if (musicData && musicData.data && musicData.data[0]) {
+        currentTrackUrl.value = musicData.data[0].url;
+        console.log("加载音乐 URL:", currentTrackUrl.value); // 打印 URL
+        audioPlayer.value.src = currentTrackUrl.value;
+        audioPlayer.value.load();
+        lastPlayedTime.value = 0;
+      } else {
+        console.log("无法加载音乐数据");
+      }
+    };
+
+    const onTimeUpdate = () => {
+      lastPlayedTime.value = audioPlayer.value.currentTime;
+    };
+
+    onMounted(() => {
+      // 组件挂载完成后，添加 beforeunload 事件监听
+      window.addEventListener('beforeunload', () => {
+        // 保存当前播放时间到 localStorage 或其他地方
+        localStorage.setItem('lastPlayedTime', lastPlayedTime.value.toString());
+
+      });
+      if (audioPlayer.value) {
+        audioPlayer.value.volume = initialVolume.value;
+        currentVolume.value = initialVolume.value;
+      }
+      currentVolume.value = initialVolume.value; // 初始化 currentVolume
+    });
+
+    // 淡入淡出效果函数
+    const fadeEffect = (startVolume, endVolume, duration = 1000) => {
+      if (!Number.isFinite(startVolume) || startVolume < 0 || startVolume > 1 ||
+        !Number.isFinite(endVolume) || endVolume < 0 || endVolume > 1) {
+        console.error('Invalid volume values:', startVolume, endVolume);
+        return;
+      }
+
+      let currentVolume = startVolume;
+      const step = (endVolume - startVolume) / (duration / 50);
+
+      const intervalId = setInterval(() => {
+        currentVolume += step;
+        if (currentVolume < 0 || currentVolume > 1) {
+          currentVolume = Math.max(0, Math.min(currentVolume, 1)); // 修正音量值在 0 到 1 之间
+        }
+
+        if (audioPlayer.value) {
+          audioPlayer.value.volume = currentVolume;
+        }
+
+        if ((step > 0 && currentVolume >= endVolume) || (step < 0 && currentVolume <= endVolume)) {
+          clearInterval(intervalId);
+        }
+      }, 50);
+
+      return intervalId;
+    };
+
+
+    const playMusicWithFadeIn = () => {
+      fadeEffect(0, 1, 1000);
+      setTimeout(() => {
+        if (audioPlayer.value) {
+          audioPlayer.value.play().catch(error => {
+            console.error('播放音乐时出错:', error);
+          });
+        }
+      }, 1000); // 确保在淡入完成后播放
+    };
+
+    const pauseMusicWithFadeOut = () => {
+      fadeEffect(1, 0, 1000);
+      setTimeout(() => {
+        if (audioPlayer.value) {
+          audioPlayer.value.pause();
+        }
+      }, 1000); // 确保在淡出完成后暂停
+    };
+
+    const playMusic = () => {
+      audioPlayer.value.play().then(() => {
+        console.log("音乐开始播放");
+      }).catch(error => {
+        console.error('播放音乐时出错:', error);
+        // 提示用户需要进行交互
+      });
+    };
+
+
+    const onPause = () => {
+      fadeEffect(1, 0, () => audioPlayer.value.pause()); // 从1到0淡出后暂停
+    };
+
+    const onMusicEnd = () => {
+      if (props.isInEggHuntPage) {
+        audioPlayer.value.currentTime = 0;
+        playMusic();
+      }
+    };
+
+    const onCanPlay = () => {
+      console.log("音乐可以播放了");
+      isAudioReady.value = true;
+
+      if (props.shouldAutoPlayOnStart) {
+        playMusic();
+      }
+    };
+
+    // 监听外部发送的更换曲目的消息
+    const receiveMessage = (event) => {
+      if (event.type === 'CHANGE_TRACK') {
+        loadTrack(event.payload.trackId);
+        playMusic();
+      }
+    };
+
+    // 注册全局事件监听器来接收消息
+    window.addEventListener('message', receiveMessage);
+
+    // 在卸载组件时移除事件监听器
+    onUnmounted(() => {
+      window.removeEventListener('message', receiveMessage);
+    });
+
+    return {
+      audioPlayer,
+      loadTrack,
+      playMusic,
+      onPause,
+      isReady,
+      playMusicWithFadeIn,
+      pauseMusicWithFadeOut,
+      isAudioReady,
+      onCanPlay,
+      currentTrackUrl,
+      lastPlayedTime,
+      // eslint-disable-next-line vue/no-dupe-keys
+      initialVolume,
+      onTimeUpdate,
+      onMusicEnd,
+      setPlaybackTime,
+      getIsAudioReady() {
+        return isAudioReady.value;
+      }
+    };
+
+  },
+};
+</script>
