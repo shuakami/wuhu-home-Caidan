@@ -354,9 +354,9 @@ __        __     _            ____            _             _
   animation: blink-caret 1s step-end infinite;
 }
 .console pre {
-  font-family: "Cascadia Code", monospace; /* 直接设置 pre 标签的字体 */
-  font-size: 13px; /* 例如，设置字体大小为16px */
-  line-height: 1.3; /* 设置行高，1.5 表示行高是字体大小的1.5倍 */
+  font-family: "Cascadia Code", monospace;
+  font-size: 13px;
+  line-height: 1.3;
 }
 
 @keyframes glitch {

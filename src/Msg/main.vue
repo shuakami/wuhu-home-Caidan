@@ -250,7 +250,7 @@ export default {
 
     calculateDelay(index, delaysArray) {
       let totalDelay = 0;
-      for (let j = 0; j <= index; j++) { // 注意这里使用j <= index，确保计算最后一个延迟时间
+      for (let j = 0; j <= index; j++) { // 这里使用j <= index，确保计算最后一个延迟时间
         totalDelay += delaysArray[j] || 0; // 如果delaytimestamp数组长度小于lines.length，添加默认值0避免错误
       }
       return totalDelay;
@@ -312,7 +312,6 @@ export default {
 </script>
 
 <style scoped>
-/* 代码块样式 */
 .code-block {
   font-family: 'Courier New', Courier, monospace;
   background-color: #f0f0f0;
@@ -443,7 +442,7 @@ export default {
   border-radius: 4px; /* 适中的圆角 */
   margin: 10px 0 10px 0; /* 增加外边距，让消息不会挨得太紧 */
   font-size: 14px; /* 较小的字体大小以避免显得笨重 */
-  box-shadow: 0 1px 6px rgba(0,0,0,0.2); /* 细微的阴影以增强立体感 */
+  box-shadow: 0 1px 6px rgba(0,0,0,0.2);
   display: flex; /* 使用flex布局确保元素在一行显示 */
   align-items: center; /* 垂直居中对齐内容 */
   justify-content: start; /* 确保内容靠左对齐 */
