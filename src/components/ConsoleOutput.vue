@@ -38,7 +38,6 @@ const title2 = `
 
 -----
 Copyright (C) 2023-2024 sdjz.wiki. All rights reserved.
-This project is based on the anonymous second open and adopts the MIT license.
   `;
 const content = `\n\n版本: ${config.version}_NewYear特供\n主页: ${config.home}\n\n你今年已经16岁啦！ `;
 
