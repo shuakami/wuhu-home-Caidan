@@ -7,6 +7,11 @@ on:
 jobs:
   detect-language-and-reply:
     runs-on: ubuntu-latest
+    env:  # 添加这个部分
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -23,6 +28,4 @@ jobs:
 
       - name: Detect issue language and comment
         id: detect_language
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .github/actions/detect_language_and_reply.py
