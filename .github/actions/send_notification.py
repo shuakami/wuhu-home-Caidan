@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # 导入timezone模块
 from github import Github
 import langdetect
 
@@ -21,8 +21,8 @@ for issue in issues:
   # 获取issue的最后更新时间
   last_updated = issue.updated_at
 
-  # 获取当前时间
-  now = datetime.now()
+  # 获取当前时间（带有时区信息）
+  now = datetime.now(timezone.utc)
 
   # 计算时间差
   time_diff = now - last_updated
