@@ -23,9 +23,13 @@ jobs:
       - name: Detect language
         id: detect_lang
         run: |
-          python -m pip install --upgrade pip
-          pip install langdetect
-          echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect('${{ steps.get_data.outputs.body }}' or '${{ steps.get_data.outputs.title }}'))\")" >> $GITHUB_ENV
+         - python -m pip install --upgrade pip
+         - pip install langdetect
+         - |
+           issue_body="${{ github.event.issue.body }}"
+           issue_title="${{ github.event.issue.title }}"
+           issue_body_or_title="'$issue_body' or '$issue_title'"
+           echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect($issue_body_or_title))\")" >> $GITHUB_ENV
       
       - name: Reply to new issue (Chinese)
         if: env.detected_lang == 'zh-cn'
