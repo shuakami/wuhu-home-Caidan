@@ -1,9 +1,8 @@
 name: Issue Notification
 
 on:
-  push:  # 这将在每次有新的commit时运行
-    branches:
-      - master  # 或者你的默认分支名
+  schedule:
+    - cron: '0 * * * *'  # 这将每小时运行一次
 
 jobs:
   notify:
