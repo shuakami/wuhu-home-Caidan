@@ -28,7 +28,7 @@ jobs:
           issue_body="${{ github.event.issue.body }}"
           issue_title="${{ github.event.issue.title }}"
           issue_body_or_title="'$issue_body' or '$issue_title'"
-          echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect($issue_body_or_title))\")" >> $GITHUB_ENV
+          echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect('$issue_body_or_title'))\")" >> $GITHUB_ENV
       
       - name: Reply to new issue (Chinese)
         if: env.detected_lang == 'zh-cn'
