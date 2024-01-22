@@ -7,7 +7,7 @@ on:
 jobs:
   detect-language-and-reply:
     runs-on: ubuntu-latest
-    env:  # 添加这个部分
+    env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ISSUE_BODY: ${{ github.event.issue.body }}
       ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -21,10 +21,11 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install langdetect
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install langdetect
+          pip install PyGithub  # 添加这一行来安装PyGithub库
 
       - name: Detect issue language and comment
         id: detect_language
