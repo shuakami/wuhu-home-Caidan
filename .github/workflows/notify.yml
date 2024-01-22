@@ -2,7 +2,7 @@ name: Issue Notification
 
 on:
   schedule:
-    - cron: '0 * * * *'  
+    - cron: '0 */5 * * *'  
 
 jobs:
   notify:
