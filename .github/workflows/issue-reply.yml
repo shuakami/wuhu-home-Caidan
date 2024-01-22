@@ -38,7 +38,8 @@ jobs:
           const text = JSON.stringify(body || title);
           const cleanedText = text.replace(/[^\w\s\u4e00-\u9fa5]/gi, '');
           const isChinese = /[\u4e00-\u9fa5]/.test(cleanedText);
-          const lang = isChinese ? 'zh-cn' : execSync(`python -c "from langdetect import detect; print(detect(${cleanedText}))"`).toString().trim();
+          const escapedText = JSON.stringify(cleanedText);  // 对 cleanedText 进行转义处理
+          const lang = isChinese ? 'zh-cn' : execSync(`python -c "from langdetect import detect; print(detect(${escapedText}))"`).toString().trim();
 
           // 根据判断结果选择回复内容
           const reply = lang === 'zh-cn' ?
