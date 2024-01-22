@@ -1,57 +1,49 @@
-name: Auto Reply to Issues
+name: Issue Bot Language Detection
 
 on:
   issues:
     types: [opened]
 
 jobs:
-  auto-reply:
+  detect-language-and-reply:
     runs-on: ubuntu-latest
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install langdetect
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Install langdetect
+        run: |
+          python -m pip install --upgrade pip
+          pip install langdetect
 
-    - name: Reply to Issue
-      uses: actions/github-script@v5
-      with:
-        script: |
-          const issue = context.issue;
-          const owner = issue.owner;
-          const repo = issue.repo;
-          const issue_number = issue.number;
-          const body = context.payload.issue.body;
-          const title = context.payload.issue.title;
-          const octokit = github.getOctokit(github_token);
-
-          // 使用Python和langdetect库来判断Issue的内容或标题的语言
-          const { execSync } = require('child_process');
-          const text = JSON.stringify(body || title);
-          const cleanedText = text.replace(/[^\w\s\u4e00-\u9fa5]/gi, '');
-          const isChinese = /[\u4e00-\u9fa5]/.test(cleanedText);
-          const escapedText = JSON.stringify(cleanedText);  // 对 cleanedText 进行转义处理
-          const lang = isChinese ? 'zh-cn' : execSync(`python -c "from langdetect import detect; print(detect(${escapedText}))"`).toString().trim();
-
-          // 根据判断结果选择回复内容
-          const reply = lang === 'zh-cn' ?
-            '感谢您的问题反馈！我们会在4-8小时内回复您，请耐心等待QAQ，放平心态哦~ \n\n在等待期间，请务必查阅我们的项目文档：生日插件快速入门。\n\n若确认问题是与本项目相关，请提供以下详细信息以便我们更准确地定位和解决问题：\n- 错误内容（附上完整的错误日志）\n- 截图（如有可视化错误界面）\n- 相关代码片段或仓库链接（如果方便的话）\n\n我们会尽快伸出援手，帮您解决遇到的难题哒！' :
-            'Hey there! Thanks for reaching out with your issue. We\'ll get back to you within 4-8 hours, so please hang tight and stay calm ~<3~\n\nWhile you\'re waiting, be sure to review our project documentation: Birthday Plugin Quick Start Guide.\n\nIf the problem seems related to this project, kindly provide us with these details to help us troubleshoot more efficiently:\n- Error messages (include a full error log)\n- Screenshots (if applicable to visualize the issue)\n- Relevant code snippets or repository link (if convenient)\n\nWe\'re on it! Our team will assist you in tackling your issue as promptly as possible. Keep your cool – we\'ve got this!';
-
-          // 发送回复
-          await octokit.rest.issues.createComment({
-            owner,
-            repo,
-            issue_number,
-            body: reply
-          });
+      - name: Detect issue language and comment
+        id: detect_language
         env:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          import langdetect
+          from github import Github
+
+          # 获取Issue内容
+          issue_body = "${{ github.event.issue.body }}"
+          if not issue_body:
+            issue_body = "${{ github.event.issue.title }}"
+
+          # 检测语言
+          detected_lang = langdetect.detect(issue_body)
+
+          if detected_lang == 'zh-cn':
+            comment_text = "感谢您的问题反馈！我们会在4-8小时内回复您，请耐心等待QAQ，放平心态哦~\n\n在等待期间，请务必查阅我们的项目文档：[生日插件快速入门](https://docs.sdjz.wiki/docs/birthday/start)。\n\n若确认问题是与本项目相关，请提供以下详细信息以便我们更准确地定位和解决问题：\n- 错误内容（附上完整的错误日志）\n- 截图（如有可视化错误界面）\n- 相关代码片段或仓库链接（如果方便的话）\n\n我们会尽快伸出援手，帮您解决遇到的难题哒！"
+          elif detected_lang == 'en':
+            comment_text = "Hey there! Thanks for reaching out with your issue. We'll get back to you within 4-8 hours, so please hang tight and stay calm ~<3~\n\nWhile you're waiting, be sure to review our project documentation: [Birthday Plugin Quick Start Guide](https://docs.sdjz.wiki/docs/birthday/start).\n\nIf the problem seems related to this project, kindly provide us with these details to help us troubleshoot more efficiently:\n- Error messages (include a full error log)\n- Screenshots (if applicable to visualize the issue)\n- Relevant code snippets or repository link (if convenient)\n\nWe're on it! Our team will assist you in tackling your issue as promptly as possible. Keep your cool – we've got this!"
+
+          # 使用Github API发表评论
+          g = Github(GITHUB_TOKEN)
+          repo = g.get_repo("shuakami/wuhu-home-Caidan")
+          issue = repo.get_issue(number=github.event.issue.number)
+          issue.create_comment(comment_text)
