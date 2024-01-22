@@ -5,7 +5,7 @@ import langdetect
 
 # 获取环境变量
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-REPO_NAME = "your_username/your_repo"  # 替换为你的用户名和仓库名
+REPO_NAME = "shuakami/wuhu-home-Caidan" 
 
 # 创建Github对象
 g = Github(GITHUB_TOKEN)
