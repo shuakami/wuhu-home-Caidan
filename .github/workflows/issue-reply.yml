@@ -23,13 +23,12 @@ jobs:
       - name: Detect language
         id: detect_lang
         run: |
-         - python -m pip install --upgrade pip
-         - pip install langdetect
-         - |
-           issue_body="${{ github.event.issue.body }}"
-           issue_title="${{ github.event.issue.title }}"
-           issue_body_or_title="'$issue_body' or '$issue_title'"
-           echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect($issue_body_or_title))\")" >> $GITHUB_ENV
+          python -m pip install --upgrade pip
+          pip install langdetect
+          issue_body="${{ github.event.issue.body }}"
+          issue_title="${{ github.event.issue.title }}"
+          issue_body_or_title="'$issue_body' or '$issue_title'"
+          echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect($issue_body_or_title))\")" >> $GITHUB_ENV
       
       - name: Reply to new issue (Chinese)
         if: env.detected_lang == 'zh-cn'
@@ -39,7 +38,7 @@ jobs:
           script: |
             const ISSUE_COMMENT_ZH = `
               感谢您的问题反馈！我们会在4-8小时内回复您，请耐心等待QAQ，放平心态哦~
-              在等待期间，请务必查阅我们的项目文档：[生日插件快速入门](https://docs.sdjz.wiki/docs/birthday/start)。
+              在等待期间，请务必查阅我们的项目文档：生日插件快速入门。
               若确认问题是与本项目相关，请提供以下详细信息以便我们更准确地定位和解决问题：
               - 错误内容（附上完整的错误日志）
               - 截图（如有可视化错误界面）
@@ -61,7 +60,7 @@ jobs:
           script: |
             const ISSUE_COMMENT_EN = `
               Hey there! Thanks for reaching out with your issue. We'll get back to you within 4-8 hours, so please hang tight and stay calm ~<3~
-              While you're waiting, be sure to review our project documentation: [Birthday Plugin Quick Start Guide](https://docs.sdjz.wiki/docs/birthday/start).
+              While you're waiting, be sure to review our project documentation: Birthday Plugin Quick Start Guide.
               If the problem seems related to this project, kindly provide us with these details to help us troubleshoot more efficiently:
               - Error messages (include a full error log)
               - Screenshots (if applicable to visualize the issue)
