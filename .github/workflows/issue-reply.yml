@@ -16,16 +16,9 @@ jobs:
 
       - name: Get issue body and title
         id: get_data
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issueData = {
-              body: context.payload.issue.body,
-              title: context.payload.issue.title
-            };
-            core.setOutput("body", issueData.body);
-            core.setOutput("title", issueData.title);
+        run: |
+          echo "::set-output name=body::$(echo '${{ toJson(github.event.issue.body) }}' | tr -d '\n')"
+          echo "::set-output name=title::$(echo '${{ toJson(github.event.issue.title) }}' | tr -d '\n')"
 
       - name: Detect language
         id: detect_lang
@@ -33,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install langdetect
           echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect('${{ steps.get_data.outputs.body }}' or '${{ steps.get_data.outputs.title }}'))\")" >> $GITHUB_ENV
-
+      
       - name: Reply to new issue (Chinese)
         if: env.detected_lang == 'zh-cn'
         uses: actions/github-script@v5
