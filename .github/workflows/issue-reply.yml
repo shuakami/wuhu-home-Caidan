@@ -1,75 +1,56 @@
-# .github/workflows/issue-reply.yml
+name: Auto Reply to Issues
 
-name: Issue Response Bot with Language Detection
 on:
   issues:
     types: [opened]
 
 jobs:
-  detect-and-reply:
+  auto-reply:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
 
-      - name: Get issue body and title
-        id: get_data
-        run: |
-          echo "::set-output name=body::$(echo '${{ toJson(github.event.issue.body) }}' | tr -d '\n')"
-          echo "::set-output name=title::$(echo '${{ toJson(github.event.issue.title) }}' | tr -d '\n')"
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install langdetect
 
-      - name: Detect language
-        id: detect_lang
-        run: |
-          python -m pip install --upgrade pip
-          pip install langdetect
-          issue_body="${{ github.event.issue.body }}"
-          issue_title="${{ github.event.issue.title }}"
-          issue_body_or_title="'$issue_body' or '$issue_title'"
-          echo "detected_lang=$(python -c \"import langdetect; print(langdetect.detect('$issue_body_or_title'))\")" >> $GITHUB_ENV
-      
-      - name: Reply to new issue (Chinese)
-        if: env.detected_lang == 'zh-cn'
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const ISSUE_COMMENT_ZH = `
-              感谢您的问题反馈！我们会在4-8小时内回复您，请耐心等待QAQ，放平心态哦~
-              在等待期间，请务必查阅我们的项目文档：生日插件快速入门。
-              若确认问题是与本项目相关，请提供以下详细信息以便我们更准确地定位和解决问题：
-              - 错误内容（附上完整的错误日志）
-              - 截图（如有可视化错误界面）
-              - 相关代码片段或仓库链接（如果方便的话）
-              我们会尽快伸出援手，帮您解决遇到的难题哒！
-            `;
-            await context.github.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: ISSUE_COMMENT_ZH
-            });
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Reply to new issue (English)
-        if: env.detected_lang == 'en'
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const ISSUE_COMMENT_EN = `
-              Hey there! Thanks for reaching out with your issue. We'll get back to you within 4-8 hours, so please hang tight and stay calm ~<3~
-              While you're waiting, be sure to review our project documentation: Birthday Plugin Quick Start Guide.
-              If the problem seems related to this project, kindly provide us with these details to help us troubleshoot more efficiently:
-              - Error messages (include a full error log)
-              - Screenshots (if applicable to visualize the issue)
-              - Relevant code snippets or repository link (if convenient)
-              Our team will assist you in tackling your issue as promptly as possible. Keep your cool – we've got this!
-            `;
-            await context.github.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: ISSUE_COMMENT_EN
-            });
+    - name: Reply to Issue
+      uses: actions/github-script@v5
+      with:
+        script: |
+          const issue = context.issue;
+          const owner = issue.owner;
+          const repo = issue.repo;
+          const issue_number = issue.number;
+          const body = context.payload.issue.body;
+          const title = context.payload.issue.title;
+          const octokit = github.getOctokit(github_token);
+
+          // 使用Python和langdetect库来判断Issue的内容或标题的语言
+          const { execSync } = require('child_process');
+          const text = body || title;
+          const cleanedText = text.replace(/[^\w\s\u4e00-\u9fa5]/gi, '');
+          const isChinese = /[\u4e00-\u9fa5]/.test(cleanedText);
+          const lang = isChinese ? 'zh-cn' : execSync(`python -c "from langdetect import detect; print(detect('${cleanedText}'))"`).toString().trim();
+
+          // 根据判断结果选择回复内容
+          const reply = lang === 'zh-cn' ?
+            '感谢您的问题反馈！我们会在4-8小时内回复您，请耐心等待QAQ，放平心态哦~ \n\n在等待期间，请务必查阅我们的项目文档：生日插件快速入门。\n\n若确认问题是与本项目相关，请提供以下详细信息以便我们更准确地定位和解决问题：\n- 错误内容（附上完整的错误日志）\n- 截图（如有可视化错误界面）\n- 相关代码片段或仓库链接（如果方便的话）\n\n我们会尽快伸出援手，帮您解决遇到的难题哒！' :
+            'Hey there! Thanks for reaching out with your issue. We\'ll get back to you within 4-8 hours, so please hang tight and stay calm ~<3~\n\nWhile you\'re waiting, be sure to review our project documentation: Birthday Plugin Quick Start Guide.\n\nIf the problem seems related to this project, kindly provide us with these details to help us troubleshoot more efficiently:\n- Error messages (include a full error log)\n- Screenshots (if applicable to visualize the issue)\n- Relevant code snippets or repository link (if convenient)\n\nWe\'re on it! Our team will assist you in tackling your issue as promptly as possible. Keep your cool – we\'ve got this!';
+
+          // 发送回复
+          await octokit.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number,
+            body: reply
+          });
+        env:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
