@@ -1,0 +1,28 @@
+name: Issue Notification
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 这将每小时运行一次
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install langdetect
+          pip install PyGithub
+
+      - name: Send notification
+        run: python .github/actions/send_notification.py
