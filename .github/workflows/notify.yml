@@ -2,11 +2,13 @@ name: Issue Notification
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 这将每小时运行一次
+    - cron: '0 * * * *'  
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    permissions:  
+      issues: write  
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
