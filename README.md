@@ -143,7 +143,7 @@ The complete license text can be found in the `LICENSE` file in our repository.
   Staying at the forefront of web development, implementing performance and functionality enhancements
 
 
-👉 You can join our journey [Click the link to go directly to the group](https://t.me/sdjzwiki)
+👉 You can join our journey [Click the link to go directly to the group](https://t.me/bytefreeze)
 
 We invite you to shape the future development of this project:
 
